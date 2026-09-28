@@ -1,0 +1,50 @@
+{{- if .Values.cleanupOnUninstall }}
+# Runs before `helm uninstall` removes anything: stops the controller, then
+# removes the hostnames, the tunnel and the connector from Orbit and releases
+# the finalizers, so nothing is left published or stuck.
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: {{ .Release.Name }}-cleanup
+  labels: {{- include "olc.labels" . | nindent 4 }}
+  annotations:
+    helm.sh/hook: pre-delete
+    helm.sh/hook-weight: "0"
+    helm.sh/hook-delete-policy: before-hook-creation,hook-succeeded
+spec:
+  backoffLimit: 3
+  activeDeadlineSeconds: 600
+  template:
+    metadata:
+      labels: {{- include "olc.selector" . | nindent 8 }}
+        app.kubernetes.io/component: cleanup
+    spec:
+      serviceAccountName: {{ include "olc.name" . }}
+      restartPolicy: OnFailure
+      securityContext: {{- toYaml .Values.podSecurityContext | nindent 8 }}
+      containers:
+        - name: cleanup
+          image: {{ include "olc.image" . | quote }}
+          imagePullPolicy: {{ .Values.image.pullPolicy }}
+          args:
+            - cleanup
+            - --controller-deployment={{ include "olc.name" . }}
+            {{- include "olc.args" . | nindent 12 }}
+          env:
+            - name: POD_NAMESPACE
+              valueFrom: { fieldRef: { fieldPath: metadata.namespace } }
+          volumeMounts:
+            - name: orbit-api
+              mountPath: /var/run/orbit
+              readOnly: true
+          resources: {{- toYaml .Values.resources | nindent 12 }}
+          securityContext: {{- toYaml .Values.securityContext | nindent 12 }}
+      volumes:
+        - name: orbit-api
+          secret:
+            secretName: {{ include "olc.secret" . }}
+            defaultMode: 0400
+            items:
+              - key: {{ .Values.orbit.existingSecretKey }}
+                path: api-token
+{{- end }}

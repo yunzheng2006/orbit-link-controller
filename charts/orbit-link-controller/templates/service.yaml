@@ -1,0 +1,38 @@
+# The connector forwards here; every controller replica serves it.
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ .Release.Name }}-router
+  labels: {{- include "olc.labels" . | nindent 4 }}
+spec:
+  type: ClusterIP
+  selector: {{- include "olc.selector" . | nindent 4 }}
+  ports:
+    - { name: http, port: 80, targetPort: router, protocol: TCP }
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ .Release.Name }}-metrics
+  labels: {{- include "olc.labels" . | nindent 4 }}
+    app.kubernetes.io/component: metrics
+spec:
+  type: ClusterIP
+  selector: {{- include "olc.selector" . | nindent 4 }}
+  ports:
+    - { name: metrics, port: 8081, targetPort: metrics, protocol: TCP }
+{{- if .Values.metrics.serviceMonitor }}
+---
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  name: {{ include "olc.name" . }}
+  labels: {{- include "olc.labels" . | nindent 4 }}
+spec:
+  selector:
+    matchLabels:
+      app.kubernetes.io/instance: {{ .Release.Name }}
+      app.kubernetes.io/component: metrics
+  endpoints:
+    - port: metrics
+{{- end }}

@@ -1,0 +1,35 @@
+{
+  "$schema": "https://json-schema.org/draft-07/schema#",
+  "type": "object",
+  "required": ["clusterName", "orbit", "image", "connector"],
+  "properties": {
+    "clusterName": { "type": "string", "pattern": "^[a-z0-9]([a-z0-9-]{0,30}[a-z0-9])?$" },
+    "orbit": {
+      "type": "object",
+      "properties": {
+        "api": { "type": "string", "pattern": "^https?://" },
+        "existingSecret": { "type": "string" },
+        "existingSecretKey": { "type": "string", "minLength": 1 },
+        "apiToken": { "type": "string", "pattern": "^(|orb_[A-Za-z0-9_-]{20,80})$" },
+        "landing": { "type": "string" },
+        "landing2": { "type": "string" },
+        "apiQPS": { "type": "number", "exclusiveMinimum": 0, "maximum": 20 },
+        "apiBurst": { "type": "integer", "minimum": 1, "maximum": 50 },
+        "adopt": { "type": "boolean" }
+      }
+    },
+    "ingressClass": { "type": "object", "properties": { "create": { "type": "boolean" }, "name": { "type": "string", "minLength": 1 }, "default": { "type": "boolean" } } },
+    "gatewayClass": { "type": "object", "properties": { "create": { "type": "boolean" }, "name": { "type": "string", "minLength": 1 } } },
+    "controllerName": { "type": "string", "pattern": "^[a-z0-9.-]+/[A-Za-z0-9._/-]+$" },
+    "image": { "type": "object", "required": ["repository"], "properties": { "repository": { "type": "string", "minLength": 1 }, "tag": { "type": "string" } } },
+    "replicaCount": { "type": "integer", "minimum": 1, "maximum": 5 },
+    "connector": {
+      "type": "object",
+      "required": ["image", "replicas"],
+      "properties": { "image": { "type": "string", "minLength": 1 }, "replicas": { "type": "integer", "minimum": 0, "maximum": 16 }, "tcp": { "type": "boolean" } }
+    },
+    "podDisruptionBudget": { "type": "object" },
+    "cleanupOnUninstall": { "type": "boolean" },
+    "logLevel": { "type": "string", "enum": ["debug", "info", "error"] }
+  }
+}

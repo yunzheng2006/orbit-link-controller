@@ -1,0 +1,12 @@
+apiVersion: v2
+name: orbit-link
+description: Runs the Orbit Link connector in Kubernetes, so a service in the cluster is published through Orbit Link without an inbound port.
+type: application
+version: 0.1.0
+appVersion: "1.3.0"
+home: https://orbit.yunzheng.space/docs/link/
+icon: https://orbit.yunzheng.space/favicon.svg
+keywords: [orbit, tunnel, ingress, connector]
+maintainers:
+  - name: YunZheng
+    url: https://orbit.yunzheng.space/

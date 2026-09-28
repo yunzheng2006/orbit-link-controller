@@ -1,0 +1,26 @@
+name: ci
+on:
+  push:
+    branches: [main]
+  pull_request:
+permissions:
+  contents: read
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-go@v5
+        with:
+          go-version-file: go.mod
+      - uses: azure/setup-helm@v4
+      - name: go vet
+        run: go vet ./...
+      - name: go test
+        run: go test -count=1 -race ./...
+      - name: helm lint
+        run: |
+          helm lint charts/orbit-link --set tunnel.token=lnk_example --set tunnel.endpoint=203.0.113.4:7844 --set tunnel.fingerprint=example --set tunnel.local=http://my-app.default.svc.cluster.local:8080
+          helm lint charts/orbit-link-controller --set clusterName=ci --set orbit.existingSecret=orbit-api
+      - name: build
+        run: CGO_ENABLED=0 go build -trimpath -o /dev/null ./cmd/orbit-link-controller

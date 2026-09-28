@@ -1,0 +1,12 @@
+apiVersion: v2
+name: orbit-link-controller
+description: Publishes Kubernetes Ingresses and Gateway API HTTPRoutes through Orbit Link, with no inbound port and no load balancer.
+type: application
+version: 0.1.1
+appVersion: "0.1.1"
+home: https://orbit.yunzheng.space/docs/link/
+icon: https://orbit.yunzheng.space/favicon.svg
+keywords: [orbit, ingress, gateway-api, tunnel, controller]
+maintainers:
+  - name: YunZheng
+    url: https://orbit.yunzheng.space/

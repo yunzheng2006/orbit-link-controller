@@ -1,0 +1,6 @@
+The Orbit Link connector is starting ({{ .Values.replicaCount }} replica(s)).
+
+  kubectl -n {{ .Release.Namespace }} rollout status deploy/{{ include "orbit-link.fullname" . }}
+
+The tunnel shows as connected in the Orbit console (Link) once a replica is
+ready. Requests are forwarded to {{ .Values.tunnel.local }}.

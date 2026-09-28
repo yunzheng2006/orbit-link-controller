@@ -1,0 +1,17 @@
+The Orbit Link controller is starting in {{ .Release.Namespace }}.
+
+Publish a service with an Ingress of class "{{ .Values.ingressClass.name }}":
+
+  spec:
+    ingressClassName: {{ .Values.ingressClass.name }}
+    rules:
+      - host: app.example.com
+        http: { paths: [ { path: /, pathType: Prefix, backend: { service: { name: my-app, port: { number: 80 } } } } ] }
+
+or an HTTPRoute attached to a Gateway of GatewayClass "{{ .Values.gatewayClass.name }}".
+
+Each hostname appears in the Ingress status (or the Gateway's addresses) with
+the name to point a CNAME record at:
+
+  kubectl get ingress -A
+  kubectl describe ingress <name>     # events: published, conflicts, quota

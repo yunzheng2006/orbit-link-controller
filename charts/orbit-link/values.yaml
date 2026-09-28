@@ -1,0 +1,94 @@
+# Orbit Link connector. Create the tunnel in the Orbit console (Link → New
+# tunnel); the install dialog shows the credential, the endpoints and the
+# fingerprints used below.
+
+image:
+  repository: cr.yunzheng.space/orbit-link   # mirror: ghcr.io/yunzheng2006/orbit-link
+  tag: ""                                     # default: the chart's appVersion
+  pullPolicy: IfNotPresent
+imagePullSecrets: []
+
+tunnel:
+  # The tunnel credential (lnk_…). Either name a Secret you manage (key
+  # `token` by default), or give the token here and the chart creates the
+  # Secret. Prefer existingSecret, or --set-file tunnel.token=<file>.
+  existingSecret: ""
+  existingSecretKey: token
+  token: ""
+  # Comma-separated, in the same order: ORBIT_LINK_ENDPOINT and
+  # ORBIT_LINK_FINGERPRINT from the install dialog.
+  endpoint: ""
+  fingerprint: ""
+  # The in-cluster address requests are forwarded to.
+  local: ""                                    # e.g. http://my-app.default.svc.cluster.local:8080
+  # Use the TCP fallback only (networks that drop UDP).
+  tcp: false
+
+# Each replica holds its own connection; with connector 1.3.0 or later
+# replicas behind one NAT all stay connected.
+replicaCount: 2
+
+# On SIGTERM the connector finishes requests in flight for up to this long.
+drain: 8s
+
+extraEnv: []
+extraArgs: []
+
+resources:
+  requests:
+    cpu: 10m
+    memory: 24Mi
+  limits:
+    memory: 128Mi
+
+podDisruptionBudget:
+  enabled: true
+  minAvailable: 1            # only rendered when replicaCount > 1
+
+# Spread replicas across nodes (and zones, when labelled).
+topologySpread:
+  enabled: true
+  maxSkew: 1
+  whenUnsatisfiable: ScheduleAnyway
+
+podSecurityContext:
+  runAsNonRoot: true
+  runAsUser: 65532
+  runAsGroup: 65532
+  fsGroup: 65532
+  seccompProfile:
+    type: RuntimeDefault
+securityContext:
+  allowPrivilegeEscalation: false
+  readOnlyRootFilesystem: true
+  capabilities:
+    drop: [ALL]
+
+probes:
+  startup:
+    periodSeconds: 5
+    failureThreshold: 24     # about 2 minutes for the first connection
+  readiness:
+    periodSeconds: 10
+    failureThreshold: 3
+  # Off by default: a connector that lost its connection reconnects by
+  # itself, and restarting it does not help.
+  liveness:
+    enabled: false
+    periodSeconds: 20
+    failureThreshold: 6
+
+# Optional egress policy: only DNS, the landing points (UDP/TCP 7844) and the
+# local service.
+networkPolicy:
+  enabled: false
+  localPort: 0               # the local service's container port, when enabled
+
+nameOverride: ""
+fullnameOverride: ""
+podAnnotations: {}
+podLabels: {}
+nodeSelector: {}
+tolerations: []
+affinity: {}
+priorityClassName: ""

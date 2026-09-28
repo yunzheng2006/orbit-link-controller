@@ -1,0 +1,80 @@
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: {{ include "olc.name" . }}
+  labels: {{- include "olc.labels" . | nindent 4 }}
+automountServiceAccountToken: true
+---
+# Cluster-wide: read what is published and write its status and finalizer.
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: {{ .Release.Namespace }}-{{ include "olc.name" . }}
+  labels: {{- include "olc.labels" . | nindent 4 }}
+rules:
+  - apiGroups: [networking.k8s.io]
+    resources: [ingresses]
+    verbs: [get, list, watch, update, patch]
+  - apiGroups: [networking.k8s.io]
+    resources: [ingresses/status]
+    verbs: [get, update, patch]
+  - apiGroups: [networking.k8s.io]
+    resources: [ingressclasses]
+    verbs: [get, list, watch]
+  - apiGroups: [gateway.networking.k8s.io]
+    resources: [gatewayclasses, gateways, httproutes]
+    verbs: [get, list, watch, update, patch]
+  - apiGroups: [gateway.networking.k8s.io]
+    resources: [gatewayclasses/status, gateways/status, httproutes/status]
+    verbs: [get, update, patch]
+  - apiGroups: [""]
+    resources: [services]
+    verbs: [get, list, watch]
+  - apiGroups: ["", events.k8s.io]
+    resources: [events]
+    verbs: [create, patch]
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: {{ .Release.Namespace }}-{{ include "olc.name" . }}
+  labels: {{- include "olc.labels" . | nindent 4 }}
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: {{ .Release.Namespace }}-{{ include "olc.name" . }}
+subjects:
+  - kind: ServiceAccount
+    name: {{ include "olc.name" . }}
+    namespace: {{ .Release.Namespace }}
+---
+# Own namespace only: the connector, its credential, leader election.
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: {{ include "olc.name" . }}
+  labels: {{- include "olc.labels" . | nindent 4 }}
+rules:
+  - apiGroups: [""]
+    resources: [secrets]
+    verbs: [get, list, watch, create, update, patch, delete]
+  - apiGroups: [apps]
+    resources: [deployments]
+    verbs: [get, list, watch, create, update, patch, delete]
+  - apiGroups: [coordination.k8s.io]
+    resources: [leases]
+    verbs: [get, list, watch, create, update, patch, delete]
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: {{ include "olc.name" . }}
+  labels: {{- include "olc.labels" . | nindent 4 }}
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: Role
+  name: {{ include "olc.name" . }}
+subjects:
+  - kind: ServiceAccount
+    name: {{ include "olc.name" . }}
+    namespace: {{ .Release.Namespace }}

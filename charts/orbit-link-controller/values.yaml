@@ -1,0 +1,92 @@
+# Orbit Link controller: handles Ingresses of class `orbit-link` and
+# HTTPRoutes attached to Gateways of GatewayClass `orbit-link`, publishes their
+# hostnames through one Orbit Link tunnel, and runs the connector for it.
+
+# Names this cluster in Orbit: the tunnel is k8s-<clusterName>, and the
+# hostnames it publishes are tagged k8s:<clusterName>/<release>. Required;
+# 1-32 lower-case letters, digits and -.
+clusterName: ""
+
+orbit:
+  api: https://dash.yunzheng.space/api/v1
+  # An Orbit API token with the "Orbit Link only" scope (Console → API →
+  # Create token). Either name a Secret you manage (key `token` by default)
+  # or give it here and the chart creates the Secret.
+  existingSecret: ""
+  existingSecretKey: token
+  apiToken: ""
+  # Landing point: a city from the console's Link page (or its id). Empty:
+  # the first one offered. landing2 adds a second one in another city.
+  landing: ""
+  landing2: ""
+  # Client-side limit on Orbit API calls.
+  apiQPS: 2
+  apiBurst: 5
+  # Take over existing Shield sites on your account that have the same
+  # hostnames (created by hand). Off: such hostnames are reported as conflicts.
+  adopt: false
+
+ingressClass:
+  create: true
+  name: orbit-link
+  default: false             # make it the cluster's default IngressClass
+
+gatewayClass:
+  # Created when the Gateway API CRDs are installed.
+  create: true
+  name: orbit-link
+
+controllerName: yunzheng.space/orbit-link
+
+image:
+  repository: cr.yunzheng.space/orbit-link-controller   # mirror: ghcr.io/yunzheng2006/orbit-link-controller
+  tag: ""                                                # default: appVersion
+  pullPolicy: IfNotPresent
+imagePullSecrets: []
+
+# Controller replicas: one reconciles (leader election), all of them serve
+# the in-cluster router the connector forwards to.
+replicaCount: 2
+
+connector:
+  image: cr.yunzheng.space/orbit-link:1.3.0              # mirror: ghcr.io/yunzheng2006/orbit-link:1.3.0
+  replicas: 2
+  tcp: false                 # TCP fallback only (networks that drop UDP)
+
+resources:
+  requests:
+    cpu: 20m
+    memory: 64Mi
+  limits:
+    memory: 256Mi
+
+podDisruptionBudget:
+  enabled: true
+  minAvailable: 1
+
+metrics:
+  serviceMonitor: false      # create a Prometheus Operator ServiceMonitor
+
+podSecurityContext:
+  runAsNonRoot: true
+  runAsUser: 65532
+  runAsGroup: 65532
+  fsGroup: 65532             # lets the non-root user read the mounted API token
+  seccompProfile:
+    type: RuntimeDefault
+securityContext:
+  allowPrivilegeEscalation: false
+  readOnlyRootFilesystem: true
+  capabilities:
+    drop: [ALL]
+
+# On `helm uninstall`, remove the hostnames, the tunnel and the connector
+# from Orbit first (pre-delete hook).
+cleanupOnUninstall: true
+
+logLevel: info
+podAnnotations: {}
+nodeSelector: {}
+tolerations: []
+affinity: {}
+priorityClassName: ""

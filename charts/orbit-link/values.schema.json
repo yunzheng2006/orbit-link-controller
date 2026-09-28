@@ -1,0 +1,54 @@
+{
+  "$schema": "https://json-schema.org/draft-07/schema#",
+  "type": "object",
+  "required": ["image", "tunnel", "replicaCount"],
+  "properties": {
+    "image": {
+      "type": "object",
+      "required": ["repository"],
+      "properties": {
+        "repository": { "type": "string", "minLength": 1 },
+        "tag": { "type": "string" },
+        "pullPolicy": { "type": "string", "enum": ["Always", "IfNotPresent", "Never"] }
+      }
+    },
+    "imagePullSecrets": { "type": "array" },
+    "tunnel": {
+      "type": "object",
+      "required": ["endpoint", "fingerprint", "local"],
+      "properties": {
+        "existingSecret": { "type": "string" },
+        "existingSecretKey": { "type": "string", "minLength": 1 },
+        "token": { "type": "string", "pattern": "^(|lnk_[A-Za-z0-9_-]+)$" },
+        "endpoint": { "type": "string", "minLength": 1, "pattern": "^[^,\\s]+(,[^,\\s]+)*$" },
+        "fingerprint": { "type": "string", "minLength": 1, "pattern": "^[^,\\s]+(,[^,\\s]+)*$" },
+        "local": { "type": "string", "pattern": "^https?://[^\\s?#]+$" },
+        "tcp": { "type": "boolean" }
+      }
+    },
+    "replicaCount": { "type": "integer", "minimum": 0, "maximum": 16 },
+    "drain": { "type": "string", "pattern": "^[0-9]+(ms|s|m)$" },
+    "extraEnv": { "type": "array" },
+    "extraArgs": { "type": "array", "items": { "type": "string" } },
+    "resources": { "type": "object" },
+    "podDisruptionBudget": {
+      "type": "object",
+      "properties": { "enabled": { "type": "boolean" }, "minAvailable": { "type": ["integer", "string"] } }
+    },
+    "topologySpread": {
+      "type": "object",
+      "properties": {
+        "enabled": { "type": "boolean" },
+        "maxSkew": { "type": "integer", "minimum": 1 },
+        "whenUnsatisfiable": { "type": "string", "enum": ["DoNotSchedule", "ScheduleAnyway"] }
+      }
+    },
+    "podSecurityContext": { "type": "object" },
+    "securityContext": { "type": "object" },
+    "probes": { "type": "object" },
+    "networkPolicy": {
+      "type": "object",
+      "properties": { "enabled": { "type": "boolean" }, "localPort": { "type": "integer", "minimum": 0, "maximum": 65535 } }
+    }
+  }
+}
